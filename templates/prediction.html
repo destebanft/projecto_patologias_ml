@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificador de fallas en construcción</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            width: 80%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #007bff;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h2>Sube la imagen para determinar la Tipología de Falla en Construcción</h2>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="imageInput" name="image" accept="image/*" required>
+        <button type="submit">Subir Imagen</button>
+    </form>
+
+    <div id="loading">Cargando...</div>
+
+    <h3>Resultado:</h3>
+    <p id="result"></p>
+
+    <script>
+        console.log("iniciando...");
+        let categories = {
+            1:"Acero expuesto",
+            2:"Grieta o fisura",
+            3:"Hormiguero"
+        };
+        document.getElementById("uploadForm").addEventListener("submit", async function(event) {
+            event.preventDefault(); // Evita que la página se recargue
+            document.getElementById("loading").style.display = "block";  // Muestra el mensaje de carga
+
+            let formData = new FormData();
+            let imageFile = document.getElementById("imageInput").files[0];
+            formData.append("image", imageFile);
+
+            // Validar tipo de archivo
+            if (!imageFile.type.startsWith("image/")) {
+                document.getElementById("result").innerText = "Por favor, sube un archivo de imagen válido.";
+                document.getElementById("loading").style.display = "none";
+                return;
+            }
+
+            try {
+                let response = await fetch("http://127.0.0.1:5000/predict", {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error("Error en la predicción.");
+                }
+
+                let result = await response.json();
+                document.getElementById("loading").style.display = "none";  // Oculta el mensaje de carga
+
+                document.getElementById("result").innerText =
+                    `Predicción: ${result.prediction}\nProbabilidades: ${JSON.stringify(result.probabilities)}`;
+                //console.log(categories[result.prediction])
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById("loading").style.display = "none";  // Oculta el mensaje de carga
+                document.getElementById("result").innerText = "Hubo un error al procesar la imagen. Intenta nuevamente.";
+                document.getElementById("result").classList.add("error");
+            }
+        });
+    </script>
+</body>
+</html>
