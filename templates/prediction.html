@@ -71,63 +71,94 @@
     </style>
 </head>
 <body>
-    <h2>Sube la imagen para determinar la Tipología de Falla en Construcción</h2>
+<h2>Sube la imagen para determinar la Tipología de Falla en Construcción</h2>
 
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="imageInput" name="image" accept="image/*" required>
-        <button type="submit">Subir Imagen</button>
-    </form>
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="imageInput" name="image" accept="image/*" required>
+    <h3 id="labelPreview" style="display: none;">Imagen cargada:</h3>
+    <img id="preview" src="#" alt="Vista previa" style="max-width: 300px; display: none; margin-bottom: 20px">
+    <button type="submit">Procesar</button>
+</form>
 
-    <div id="loading">Cargando...</div>
 
-    <h3>Resultado:</h3>
-    <p id="result"></p>
+<div id="loading">Cargando...</div>
 
-    <script>
-        console.log("iniciando...");
-        let categories = {
-            1:"Acero expuesto",
-            2:"Grieta o fisura",
-            3:"Hormiguero"
-        };
-        document.getElementById("uploadForm").addEventListener("submit", async function(event) {
-            event.preventDefault(); // Evita que la página se recargue
-            document.getElementById("loading").style.display = "block";  // Muestra el mensaje de carga
+<h3 id="labelResult" style="display: none;">Resultado:</h3>
+<p id="result"></p>
 
-            let formData = new FormData();
-            let imageFile = document.getElementById("imageInput").files[0];
-            formData.append("image", imageFile);
 
-            // Validar tipo de archivo
-            if (!imageFile.type.startsWith("image/")) {
-                document.getElementById("result").innerText = "Por favor, sube un archivo de imagen válido.";
-                document.getElementById("loading").style.display = "none";
-                return;
-            }
+<script>
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const labelPreview = document.getElementById("labelPreview");
+    const labelResult = document.getElementById("labelResult");
+    const result = document.getElementById("result");
 
-            try {
-                let response = await fetch("/predict", {
-                    method: "POST",
-                    body: formData
-                });
+    // Mostrar imagen al seleccionarla
+    imageInput.addEventListener("change", function () {
+        const file = imageInput.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+                labelPreview.style.display = "block";  // Mostrar el título
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = "";
+            preview.style.display = "none";
+            labelPreview.style.display = "none";
+        }
+    });
 
-                if (!response.ok) {
-                    throw new Error("Error en la predicción.");
-                }
+    // Permitir volver a seleccionar la misma imagen
+    imageInput.addEventListener("click", () => {
+        imageInput.value = '';
+    });
 
-                let result = await response.json();
-                document.getElementById("loading").style.display = "none";  // Oculta el mensaje de carga
+    // Manejo del formulario
+    document.getElementById("uploadForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        document.getElementById("loading").style.display = "block";
+        result.innerText = "";
+        labelResult.style.display = "none";
 
-                document.getElementById("result").innerText =
-                    `Predicción: ${result.prediction}\nProbabilidades: ${JSON.stringify(result.probabilities)}`;
-                //console.log(categories[result.prediction])
-            } catch (error) {
-                console.error("Error:", error);
-                document.getElementById("loading").style.display = "none";  // Oculta el mensaje de carga
-                document.getElementById("result").innerText = "Hubo un error al procesar la imagen. Intenta nuevamente.";
-                document.getElementById("result").classList.add("error");
-            }
-        });
-    </script>
+        let formData = new FormData();
+        let imageFile = imageInput.files[0];
+        formData.append("image", imageFile);
+
+        if (!imageFile.type.startsWith("image/")) {
+            result.innerText = "Por favor, sube un archivo de imagen válido.";
+            result.classList.add("error");
+            document.getElementById("loading").style.display = "none";
+            return;
+        }
+
+        try {
+            let response = await fetch("/predict", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Error en la predicción.");
+
+            let data = await response.json();
+            let acero = Number(data.probabilities[0][0].toFixed(4)) * 100;
+            let grieta = Number(data.probabilities[0][1].toFixed(4)) * 100;
+            let hormiguero = Number(data.probabilities[0][2].toFixed(4)) * 100;
+            result.innerText = `Acero expuesto ${acero}%\n\nFisura o grieta ${grieta}%\n\nHormiguero ${hormiguero}%`;
+            result.classList.remove("error");
+            labelResult.style.display = "block";
+
+        } catch (error) {
+            console.error("Error:", error);
+            result.innerText = "Hubo un error al procesar la imagen. Intenta nuevamente.";
+            result.classList.add("error");
+        } finally {
+            document.getElementById("loading").style.display = "none";
+        }
+    });
+</script>
 </body>
 </html>

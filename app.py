@@ -22,6 +22,11 @@ def hello_world():
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
+    categories = {
+        0: "Acero expuesto",
+        1: "Grieta o fisura",
+        2: "Hormiguero"
+    }
     if request.method == 'GET':
         return render_template('prediction.html')
     if request.method == 'POST':
@@ -44,8 +49,10 @@ def predict():
             # Hacer la predicción
             prediction = model.predict(img_array)
             predicted_class = np.argmax(prediction, axis=1)[0]  # Obtener la clase con mayor probabilidad
-            print({"prediction": int(predicted_class), "probabilities": prediction.tolist()})
-            return jsonify({"prediction": int(predicted_class), "probabilities": prediction.tolist()})
+
+            print(prediction.tolist())
+
+            return jsonify({"prediction":  categories[int(predicted_class)], "probabilities": prediction.tolist()})
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
