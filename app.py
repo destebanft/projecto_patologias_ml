@@ -9,7 +9,7 @@ from tensorflow.keras.utils import img_to_array
 from tensorflow.keras.preprocessing import image
 import io
 
-model = tf.keras.models.load_model('model/Model_final.h5')
+model = tf.keras.models.load_model('model/Model_finalV2.h5')
 
 app = Flask(__name__)
 CORS(app)
@@ -23,9 +23,9 @@ def hello_world():
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
     categories = {
-        0: "Acero expuesto",
-        1: "Grieta o fisura",
-        2: "Hormiguero"
+        0: "*Recomendación: Limpiar, proteger el acero con un inhibidor de corrosión y recubrir con mortero de reparación.",
+        1: "*Recomendación:  Sellar con material elástico o inyectar resina epoxi, según el tipo y movimiento de la grieta",
+        2: "*Recomendación:  Limpiar la zona afectada y rellenar con mortero de reparación de alta adherencia y sin contracción"
     }
     if request.method == 'GET':
         return render_template('prediction.html')

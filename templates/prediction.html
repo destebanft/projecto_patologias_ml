@@ -5,6 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Identificador de fallas en construcción</title>
     <style>
+        .navbar {
+            width: 100%;
+            background-color: #0056b3;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .navbar-logo {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .navbar-links {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-links li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .navbar-links li a:hover {
+            color: #d1ecff;
+        }
+
+        /* Ajuste para que el contenido no quede escondido detrás del navbar */
+
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -40,7 +82,7 @@
 
         button {
             padding: 10px 20px;
-            background-color: #007bff;
+            background-color:#0056b3;
             color: white;
             border: none;
             border-radius: 4px;
@@ -49,7 +91,7 @@
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: #007bff;
         }
 
         #result {
@@ -62,7 +104,7 @@
             display: none;
             margin-top: 10px;
             font-size: 1.2em;
-            color: #007bff;
+            color: #0056b3;
         }
 
         .error {
@@ -71,7 +113,10 @@
     </style>
 </head>
 <body>
-<h2>Sube la imagen para determinar la Tipología de Falla en Construcción</h2>
+<nav class="navbar">
+    <div class="navbar-logo">MINE-ML</div>
+</nav>
+<h2>Reporte de la tipología de la falla en la construcción</h2>
 
 <form id="uploadForm" enctype="multipart/form-data">
     <input type="file" id="imageInput" name="image" accept="image/*" required>
@@ -144,10 +189,10 @@
             if (!response.ok) throw new Error("Error en la predicción.");
 
             let data = await response.json();
-            let acero = Number(data.probabilities[0][0].toFixed(4)) * 100;
-            let grieta = Number(data.probabilities[0][1].toFixed(4)) * 100;
-            let hormiguero = Number(data.probabilities[0][2].toFixed(4)) * 100;
-            result.innerText = `Acero expuesto ${acero}%\n\nFisura o grieta ${grieta}%\n\nHormiguero ${hormiguero}%`;
+            let acero = (data.probabilities[0][0] * 100).toFixed(2);
+            let grieta = (data.probabilities[0][1] * 100).toFixed(2);
+            let hormiguero = (data.probabilities[0][2] * 100).toFixed(2);
+            result.innerText = `Acero expuesto ${acero}%\n\nGrieta o fisura${grieta}%\n\nHormiguero ${hormiguero}%\n\n\n${data.prediction}`;
             result.classList.remove("error");
             labelResult.style.display = "block";
 
