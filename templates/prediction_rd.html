@@ -114,7 +114,7 @@
 </head>
 <body>
 <nav class="navbar">
-    <div class="navbar-logo">MINE-ML</div>
+    <div class="navbar-logo">MINE-ML Redes neuronales</div>
 </nav>
 <h2>Reporte de la tipología de la falla en la construcción</h2>
 
@@ -181,7 +181,7 @@
         }
 
         try {
-            let response = await fetch("/predict", {
+            let response = await fetch("/predict_rd", {
                 method: "POST",
                 body: formData
             });
@@ -192,7 +192,7 @@
             let acero = (data.probabilities[0][0] * 100).toFixed(2);
             let grieta = (data.probabilities[0][1] * 100).toFixed(2);
             let hormiguero = (data.probabilities[0][2] * 100).toFixed(2);
-            result.innerText = `Acero expuesto ${acero}%\n\nGrieta o fisura${grieta}%\n\nHormiguero ${hormiguero}%\n\n\n${data.prediction}`;
+            result.innerText = `Acero expuesto: ${acero}%\n\nGrieta o fisura: ${grieta}%\n\nHormiguero: ${hormiguero}%\n\n\n${data.prediction}`;
             result.classList.remove("error");
             labelResult.style.display = "block";
 
