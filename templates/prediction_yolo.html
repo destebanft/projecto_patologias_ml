@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificador de fallas en construcción</title>
+    <style>
+        .navbar {
+            width: 100%;
+            background-color: #0056b3;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .navbar-logo {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .navbar-links {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar-links li a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .navbar-links li a:hover {
+            color: #d1ecff;
+        }
+
+        /* Ajuste para que el contenido no quede escondido detrás del navbar */
+
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            width: 80%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color:#0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #007bff;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #loading {
+            display: none;
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #0056b3;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-logo">MINE-ML YOLO</div>
+</nav>
+<h2>Reporte de la tipología de la falla en la construcción</h2>
+
+<form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" id="imageInput" name="image" accept="image/*" required>
+    <h3 id="labelPreview" style="display: none;">Imagen cargada:</h3>
+    <img id="preview" src="#" alt="Vista previa" style="max-width: 300px; display: none; margin-bottom: 20px">
+    <button type="submit">Procesar</button>
+</form>
+
+
+<div id="loading">Cargando...</div>
+
+<h3 id="labelResult" style="display: none;">Resultado:</h3>
+<p id="result"></p>
+
+
+<script>
+    const imageInput = document.getElementById("imageInput");
+    const preview = document.getElementById("preview");
+    const labelPreview = document.getElementById("labelPreview");
+    const labelResult = document.getElementById("labelResult");
+    const result = document.getElementById("result");
+
+    // Mostrar imagen al seleccionarla
+    imageInput.addEventListener("change", function () {
+        const file = imageInput.files[0];
+        if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                preview.style.display = "block";
+                labelPreview.style.display = "block";  // Mostrar el título
+            };
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = "";
+            preview.style.display = "none";
+            labelPreview.style.display = "none";
+        }
+    });
+
+    // Permitir volver a seleccionar la misma imagen
+    imageInput.addEventListener("click", () => {
+        imageInput.value = '';
+    });
+
+    // Manejo del formulario
+    document.getElementById("uploadForm").addEventListener("submit", async function (event) {
+        event.preventDefault();
+        document.getElementById("loading").style.display = "block";
+        result.innerText = "";
+        labelResult.style.display = "none";
+
+        let formData = new FormData();
+        let imageFile = imageInput.files[0];
+        formData.append("image", imageFile);
+
+        if (!imageFile.type.startsWith("image/")) {
+            result.innerText = "Por favor, sube un archivo de imagen válido.";
+            result.classList.add("error");
+            document.getElementById("loading").style.display = "none";
+            return;
+        }
+
+        try {
+            let response = await fetch("/predict_yolo", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) throw new Error("Error en la predicción.");
+
+            let data = await response.json();
+            let acero = (data.probabilities[0][0] * 100).toFixed(2);
+            let grieta = (data.probabilities[0][1] * 100).toFixed(2);
+            let hormiguero = (data.probabilities[0][2] * 100).toFixed(2);
+            result.innerText = `Acero expuesto: ${acero}%\n\nGrieta o fisura: ${grieta}%\n\nHormiguero ${hormiguero}%\n\n\n${data.prediction}`;
+            result.classList.remove("error");
+            labelResult.style.display = "block";
+
+        } catch (error) {
+            console.error("Error:", error);
+            result.innerText = "Hubo un error al procesar la imagen. Intenta nuevamente.";
+            result.classList.add("error");
+        } finally {
+            document.getElementById("loading").style.display = "none";
+        }
+    });
+</script>
+</body>
+</html>
