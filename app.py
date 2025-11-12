@@ -11,9 +11,11 @@ import io
 import torch
 import torchvision.transforms as T
 
+tf.config.set_visible_devices([], 'GPU')
+
 model_rd = tf.keras.models.load_model('model/resnet_model.keras')
 
-model_yolo = torch.jit.load('model/best.torchscript')
+# model_yolo = torch.jit.load('model/best.torchscript')
 
 
 app = Flask(__name__)
@@ -122,14 +124,14 @@ def predict_yolo():
             input_tensor = transform(image).unsqueeze(0)  # Añade dimensión batch
 
             # Inferencia
-            with torch.no_grad():
-                prediction = model_yolo(input_tensor)
+            # with torch.no_grad():
+            #     prediction = model_yolo(input_tensor)
             #prediction = model1.predict(img_array)
 
-            predicted_class = np.argmax(prediction, axis=1)[0]  # Obtener la clase con mayor probabilidad
-            print(prediction.tolist())
-
-            return jsonify({"prediction":  categories[int(predicted_class)], "probabilities": prediction.tolist()})
+            # predicted_class = np.argmax(prediction, axis=1)[0]  # Obtener la clase con mayor probabilidad
+            # print(prediction.tolist())
+            return 200
+            # return jsonify({"prediction":  categories[int(predicted_class)], "probabilities": prediction.tolist()})
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
