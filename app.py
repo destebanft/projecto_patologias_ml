@@ -11,7 +11,7 @@ import io
 import torch
 import torchvision.transforms as T
 
-model_rd = tf.keras.models.load_model('model/Model_finalV2.h5')
+model_rd = tf.keras.models.load_model('model/resnet_model.keras')
 
 model_yolo = torch.jit.load('model/best.torchscript')
 
@@ -19,7 +19,28 @@ model_yolo = torch.jit.load('model/best.torchscript')
 app = Flask(__name__)
 CORS(app)
 
-IMG_SIZE = (328, 328)
+
+def prepare_image_for_prediction(image_path, target_size=(224, 224)):
+    """
+    Prepara una imagen individual para ser usada por el modelo.
+    """
+    img = Image.open(image_path)
+
+    # Convertir a RGB si no lo está (importante si el modelo espera 3 canales)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+
+    # Redimensionar la imagen al tamaño esperado por el modelo
+    img = img.resize(target_size)
+
+    # Convertir la imagen a un array de NumPy
+    img_array = np.array(img)
+
+    # Expandir las dimensiones para que coincida con el formato de entrada del modelo (batch_size, height, width, channels)
+    # El modelo espera un "batch" de imágenes, incluso si es solo una.
+    img_array = np.expand_dims(img_array, axis=0)
+
+    return img_array
 
 @app.route("/")
 def hello_world():
@@ -43,20 +64,26 @@ def predict_rd():
 
             # Leer la imagen desde el request
             image_file = request.files["image"]
-            img_path = os.path.join('temp_img.jpg')
-            image_file.save(img_path)
-            img = image.load_img(img_path, target_size=(348, 348))
-            # Preprocesar la imagen
-            img_array = image.img_to_array(img)
-            img_array = np.expand_dims(img_array, axis=0)
-            img_array /= 255.0
 
+            # Abrir la imagen con PIL desde el objeto de archivo
+            img = Image.open(image_file.stream)
+
+            # Convertir a RGB si no lo está y redimensionar
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img = img.resize((224, 224))
+
+            img_array = np.array(img)
+            img_array = np.expand_dims(img_array, axis=0)
+
+            # Asumiendo que 'model_rd' ya está cargado y listo para predicción
             prediction = model_rd.predict(img_array)
             predicted_class = np.argmax(prediction, axis=1)[0]  # Obtener la clase con mayor probabilidad
 
             print(prediction.tolist())
-
-            return jsonify({"prediction":  categories[int(predicted_class)], "probabilities": prediction.tolist()})
+            # Aquí puedes añadir el código para retornar la predicción
+            # Por ejemplo:
+            return jsonify({"predicted_class": int(predicted_class), "probabilities": prediction.tolist()}), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
