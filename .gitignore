@@ -2,3 +2,5 @@
 .devcontainer
 .vscode
 model/resnet_model.keras
+model/resnet_model_fixed.keras
+/venv
