@@ -8,13 +8,16 @@ from flask_cors import CORS
 # from tensorflow.keras.utils import img_to_array
 # from tensorflow.keras.preprocessing import image
 import io
-#import torch
+# import torch
 # import torchvision.transforms as T
 import keras
 
 # tf.config.set_visible_devices([], 'GPU')
 
-model_rd = keras.models.load_model('model/resnet_model_fixed.keras')
+model_rd = keras.models.load_model(
+    'model/resnet_model_fixed.keras',
+    compile=False,
+    safe_mode=False)
 
 # model_yolo = torch.jit.load('model/best.torchscript')
 
@@ -45,9 +48,11 @@ def prepare_image_for_prediction(image_path, target_size=(224, 224)):
 
     return img_array
 
+
 @app.route("/")
 def hello_world():
     return "Hello, World from Flask!"
+
 
 @app.route('/predict_rd', methods=['GET', 'POST'])
 def predict_rd():
