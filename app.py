@@ -9,7 +9,7 @@ import keras
 
 
 model_rd = keras.models.load_model(
-    'model/resnet_model_fixed.keras'
+    'model/resnet_fin_tunning_sf_model.keras'
 )
 
 app = Flask(__name__)
